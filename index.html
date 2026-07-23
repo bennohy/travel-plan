@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的旅遊行程庫</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+    .card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; text-decoration: none; color: #333; display: block; }
+    .card:hover { border-color: #0070f3; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .tag { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; margin-right: 4px; }
+  </style>
+</head>
+<body>
+  <h1>🧳 旅遊行程總覽</h1>
+  <div id="trip-list" class="grid"></div>
+
+  <script>
+    async function loadTrips() {
+      try {
+        const res = await fetch('./trips.json');
+        const trips = await res.json();
+        const container = document.getElementById('trip-list');
+        
+        container.innerHTML = trips.map(trip => `
+          <a href="${trip.path}" class="card">
+            <h3>${trip.title}</h3>
+            <p>📅 ${trip.date}</p>
+            <p>📍 ${trip.location}</p>
+            <div>${trip.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+          </a>
+        `).join('');
+      } catch (err) {
+        console.error('資料讀取失敗:', err);
+      }
+    }
+    loadTrips();
+  </script>
+</body>
+</html>
