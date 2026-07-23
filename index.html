@@ -3,6 +3,205 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的旅行日誌與行程庫</title>
+  <style>
+    /* 暖色旅行風格變數 */
+    :root {
+      --bg-color: #faf6f0;           /* 暖奶油白底色 */
+      --card-bg: #ffffff;           /* 卡片純白底色 */
+      --text-main: #4a3b32;         /* 暖深棕色文字 (替代死黑) */
+      --text-sub: #7d6e65;          /* 淺棕色輔助字 */
+      --accent-warm: #d97736;       /* 暖橘/夕陽橘色 */
+      --accent-soft: #f4ece1;       /* 柔和沙色 */
+      --border-color: #eee4d8;     /* 暖沙色邊框 */
+      --shadow-color: rgba(74, 59, 50, 0.06);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 24px;
+      line-height: 1.6;
+    }
+
+    header {
+      margin-bottom: 40px;
+      border-bottom: 2px dashed var(--border-color);
+      padding-bottom: 24px;
+    }
+
+    .site-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    p.subtitle {
+      color: var(--text-sub);
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    /* 網格版型 */
+    .trip-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 24px;
+    }
+
+    /* 卡片基本樣式 */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(74, 59, 50, 0.12);
+      border-color: var(--accent-warm);
+    }
+
+    /* 封面圖片（只有在有 cover 時才會顯示） */
+    .card-cover {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 0 0 12px 0;
+      color: var(--text-main);
+      line-height: 1.4;
+    }
+
+    .card-info {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      margin-bottom: 16px;
+    }
+
+    .card-info-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    /* 標籤樣式 */
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: auto;
+      padding-top: 12px;
+    }
+
+    .tag {
+      background-color: var(--accent-soft);
+      color: var(--accent-warm);
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+
+    /* 讀取失敗提示 */
+    .error-msg {
+      color: #9a3412;
+      background: #fff7ed;
+      border: 1px solid #ffedd5;
+      padding: 16px 20px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 class="site-title">🧭 旅行日誌</h1>
+    <p class="subtitle">紀錄每一次踏出的步伐，點擊卡片瀏覽詳細行程規劃。</p>
+  </header>
+
+  <main>
+    <div id="trip-list" class="trip-grid"></div>
+  </main>
+
+  <script>
+    async function loadTrips() {
+      const container = document.getElementById('trip-list');
+      try {
+        const response = await fetch('./trips.json');
+        if (!response.ok) throw new Error('無法取得 trips.json');
+        
+        const trips = await response.json();
+
+        if (trips.length === 0) {
+          container.innerHTML = '<p style="color: var(--text-sub);">目前尚無行程紀錄。</p>';
+          return;
+        }
+
+        container.innerHTML = trips.map(trip => {
+          // 判斷是否有圖片
+          const imgHTML = trip.cover 
+            ? `<img src="${trip.cover}" class="card-cover" alt="${trip.title}" loading="lazy">` 
+            : '';
+
+          // 判斷是否有標籤
+          const tagsHTML = (trip.tags && trip.tags.length > 0)
+            ? `<div class="card-tags">${trip.tags.map(tag => `<span class="tag"># ${tag}</span>`).join('')}</div>`
+            : '';
+
+          return `
+            <a href="${trip.path}" class="card">
+              <div>
+                ${imgHTML}
+                <h2 class="card-title">${trip.title}</h2>
+                <div class="card-info">
+                  ${trip.date ? `<div class="card-info-item"><span>🗓️</span> ${trip.date}</div>` : ''}
+                  ${trip.location ? `<div class="card-info-item"><span>📍</span> ${trip.location}</div>` : ''}
+                </div>
+              </div>
+              ${tagsHTML}
+            </a>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('讀取行程資料失敗:', error);
+        container.innerHTML = `<div class="error-msg">⚠️ 讀取行程失敗，請確認 <code>trips.json</code> 檔案格式與位置是否正確。</div>`;
+      }
+    }
+
+    loadTrips();
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>我的旅遊行程庫</title>
   <style>
     body { font-family: sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; }
